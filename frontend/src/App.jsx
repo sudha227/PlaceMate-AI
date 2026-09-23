@@ -1,4 +1,3 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -9,6 +8,7 @@ import Skills from "./pages/Skills";
 import Projects from "./pages/Projects";
 import Resume from "./pages/Resume";
 import Assessment from "./pages/Assessment";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 function App() {
   return (
     <BrowserRouter>
@@ -22,6 +22,7 @@ function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/resume" element={<Resume />} />
         <Route path="/assessment" element={<Assessment />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
       </Routes>
     </BrowserRouter>
   );
