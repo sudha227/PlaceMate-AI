@@ -1,7 +1,8 @@
 
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from "../api";
 import "../App.css";
-import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
   const navigate = useNavigate();
@@ -19,40 +20,46 @@ function Login() {
 
     try {
       const response = await fetch(
-        "https://placemate-ai-3ajb.onrender.com/api/students/login",
+        `${API_BASE_URL}/api/students/login`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: email,
-            password: password,
+            email: email.trim(),
+            password,
           }),
         }
       );
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-      if (response.ok && data.status === "success") {
-        // Save logged-in user
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        setMessage("Login successful! 🎉");
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 500);
-      } else {
+      if (!response.ok) {
         setMessage(
-          data.message || "Invalid email or password."
+          data.message || data.error || "Invalid email or password."
+        );
+        return;
+      }
+
+      // Save the logged-in user's details.
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        // Fallback if the backend returns success without a user object.
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ email: email.trim() })
         );
       }
+
+      setMessage("Login successful! 🎉");
+
+      navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
-
       setMessage(
-        "Unable to connect to the backend. Please check your internet connection or try again."
+        "Unable to connect to the backend. Please try again."
       );
     } finally {
       setLoading(false);
@@ -60,19 +67,16 @@ function Login() {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-container">
       <div className="auth-card">
-        <h1>Continue Your Placement Journey 🚀</h1>
-
-        <p className="auth-subtitle">
-          Login to continue your placement preparation
-        </p>
+        <h1>Welcome Back!</h1>
+        <p>Login to your PlaceMate AI account</p>
 
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label>Email</label>
-
+            <label htmlFor="email">Email</label>
             <input
+              id="email"
               type="email"
               placeholder="Enter your email"
               value={email}
@@ -82,9 +86,9 @@ function Login() {
           </div>
 
           <div className="form-group">
-            <label>Password</label>
-
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               type="password"
               placeholder="Enter your password"
               value={password}
@@ -93,20 +97,18 @@ function Login() {
             />
           </div>
 
-          <button
-            className="auth-button"
-            type="submit"
-            disabled={loading}
-          >
+          {message && (
+            <p role="status" className="auth-message">
+              {message}
+            </p>
+          )}
+
+          <button type="submit" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
           </button>
-
-          {message && (
-            <p className="upload-message">{message}</p>
-          )}
         </form>
 
-        <p className="auth-footer">
+        <p>
           Don't have an account?{" "}
           <Link to="/register">Sign Up</Link>
         </p>

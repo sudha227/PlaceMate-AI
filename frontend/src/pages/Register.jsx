@@ -1,155 +1,93 @@
 
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from "../api";
 import "../App.css";
-import { Link, useNavigate } from "react-router-dom";
 
 function Register() {
-
   const navigate = useNavigate();
-
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
     password: "",
     branch: "",
-    graduation_year: ""
+    graduation_year: "",
   });
+
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  const handlePasswordChange = (e) => {
-    const value = e.target.value;
-
-    setPassword(value);
-
-    setFormData({
-      ...formData,
-      password: value
-    });
-
-    if (value.length === 0) {
-      setPasswordError("");
-      return;
-    }
-
-    if (value.length < 8) {
-      setPasswordError(
-        "Password must contain at least 8 characters."
-      );
-      return;
-    }
-
-    if (!/[A-Z]/.test(value)) {
-      setPasswordError(
-        "Password must contain at least one uppercase letter."
-      );
-      return;
-    }
-
-    if (!/[0-9]/.test(value)) {
-      setPasswordError(
-        "Password must contain at least one number."
-      );
-      return;
-    }
-
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
-      setPasswordError(
-        "Password must contain at least one special character."
-      );
-      return;
-    }
-
-    setPasswordError("");
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
     setMessage("");
-
-    if (passwordError || password.length === 0) {
-      setMessage("Please enter a valid password.");
-      return;
-    }
-
     setLoading(true);
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/students",
+        `${API_BASE_URL}/api/students`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify({
+            ...formData,
+            full_name: formData.full_name.trim(),
+            email: formData.email.trim(),
+            graduation_year: Number(formData.graduation_year),
+          }),
         }
       );
-const data = await response.text();
 
-if (response.ok) {
+      const data = await response.json().catch(() => ({}));
 
-  setMessage("Account created successfully! 🎉");
+      if (!response.ok) {
+        setMessage(
+          data.message ||
+            data.error ||
+            "Registration failed. Please try again."
+        );
+        return;
+      }
 
-  setTimeout(() => {
-    navigate("/login");
-  }, 1000);
+      setMessage("Account created successfully! 🎉");
 
-} else {
-
-  setMessage(
-    data || "Registration failed."
-  );
-
-}
-
+      // Send the user to Login after successful registration.
+      navigate("/login");
     } catch (error) {
-
       console.error("Registration error:", error);
-
       setMessage(
-       "Unable to connect to the backend. Please make sure Spring Boot is running."
+        "Unable to connect to the backend. Please try again."
       );
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
   return (
-    <div className="auth-page">
-
+    <div className="auth-container">
       <div className="auth-card">
-
-        <h1>Create Account 🎓</h1>
-
-        <p className="auth-subtitle">
-          Start your placement preparation journey
-        </p>
+        <h1>Create Account</h1>
+        <p>Join PlaceMate AI and prepare for placements</p>
 
         <form onSubmit={handleRegister}>
-
           <div className="form-group">
-            <label>Full Name</label>
-
+            <label htmlFor="full_name">Full Name</label>
             <input
-              type="text"
+              id="full_name"
               name="full_name"
+              type="text"
               placeholder="Enter your full name"
               value={formData.full_name}
               onChange={handleChange}
@@ -157,13 +95,12 @@ if (response.ok) {
             />
           </div>
 
-
           <div className="form-group">
-            <label>Email</label>
-
+            <label htmlFor="email">Email</label>
             <input
-              type="email"
+              id="email"
               name="email"
+              type="email"
               placeholder="Enter your email"
               value={formData.email}
               onChange={handleChange}
@@ -171,123 +108,68 @@ if (response.ok) {
             />
           </div>
 
-
           <div className="form-group">
-            <label>Password</label>
-
+            <label htmlFor="password">Password</label>
             <input
-              type="password"
+              id="password"
               name="password"
+              type="password"
               placeholder="Create a password"
-              value={password}
-              onChange={handlePasswordChange}
+              value={formData.password}
+              onChange={handleChange}
+              minLength={6}
               required
             />
-
-            {passwordError && (
-              <p className="password-error">
-                ⚠️ {passwordError}
-              </p>
-            )}
-
           </div>
 
-
           <div className="form-group">
-            <label>Branch</label>
-
-            <select
+            <label htmlFor="branch">Branch</label>
+            <input
+              id="branch"
               name="branch"
+              type="text"
+              placeholder="Example: CSE"
               value={formData.branch}
               onChange={handleChange}
               required
-            >
-              <option value="">
-                Select your branch
-              </option>
-
-              <option value="cse">
-                Computer Science Engineering
-              </option>
-
-              <option value="it">
-                Information Technology
-              </option>
-
-              <option value="ece">
-                Electronics & Communication
-              </option>
-
-              <option value="eee">
-                Electrical & Electronics
-              </option>
-
-              <option value="mech">
-                Mechanical Engineering
-              </option>
-
-              <option value="civil">
-                Civil Engineering
-              </option>
-
-            </select>
+            />
           </div>
-
 
           <div className="form-group">
-            <label>Graduation Year</label>
-
-            <select
+            <label htmlFor="graduation_year">
+              Graduation Year
+            </label>
+            <input
+              id="graduation_year"
               name="graduation_year"
+              type="number"
+              placeholder="Example: 2027"
               value={formData.graduation_year}
               onChange={handleChange}
+              min="2020"
+              max="2100"
               required
-            >
-              <option value="">
-                Select graduation year
-              </option>
-
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-              <option value="2028">2028</option>
-              <option value="2029">2029</option>
-
-            </select>
+            />
           </div>
 
-
-          <button
-            className="auth-button"
-            type="submit"
-            disabled={loading}
-          >
-            {loading
-              ? "Creating Account..."
-              : "Create Account"}
-          </button>
-
           {message && (
-            <p className="upload-message">
+            <p role="status" className="auth-message">
               {message}
             </p>
           )}
 
+          <button type="submit" disabled={loading}>
+            {loading ? "Creating Account..." : "Sign Up"}
+          </button>
         </form>
 
-
-        <p className="auth-footer">
+        <p>
           Already have an account?{" "}
-
-          <Link to="/login">
-            Login
-          </Link>
+          <Link to="/login">Login</Link>
         </p>
-
       </div>
-
     </div>
   );
 }
 
 export default Register;
-
